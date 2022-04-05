@@ -72,3 +72,24 @@ WHERE  prop.latitude IS NOT NULL
     print("Saving to csv in local directory...")
     df.to_csv(filename, index=False)
     return df
+
+
+def get_iris_data(use_cache=True):
+    """pull from SQL unless iris.csv exists"""
+    filename = "iris.csv"
+    if os.path.isfile(filename) and use_cache:
+        print("Reading from csv...")
+        return pd.read_csv(filename)
+
+    print("reading from sql...")
+    url = get_db_url("iris_db")
+    query = """
+    SELECT *
+    FROM measurements
+    JOIN species USING(species_id)
+    """
+    df = pd.read_sql(query, url)
+
+    print("Saving to csv in local directory...")
+    df.to_csv(filename, index=False)
+    return df

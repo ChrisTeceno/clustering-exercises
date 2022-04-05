@@ -104,7 +104,7 @@ def get_single_units(df):
     return temp_df[(temp_df["unitcnt"] < 2) | (temp_df["unitcnt"].isnull())]
 
 
-def handle_missing_values(df, prop_required_col, prop_required_row):
+def handle_missing_values(df, prop_required_col=0.7, prop_required_row=0.7):
     """drop column/row if it has more than prop_required_row missing values or more than prop_required_col missing values"""
     df2 = df.copy()
     threshold = int(round(prop_required_col * len(df2.index), 0))
@@ -128,14 +128,31 @@ def drop_replace_nulls(df):
     df["regionidcity"] = df.groupby(["regionidzip", "yearbuilt"])[
         "regionidcity"
     ].transform(lambda x: x.fillna(x.median()))
-    # fill missing values in finishedsquarefeet12 with median for same regionidzip and yearbuilt
-    df["finishedsquarefeet12"] = df.groupby(["regionidzip", "yearbuilt"])[
-        "finishedsquarefeet12"
-    ].transform(lambda x: x.fillna(x.median()))
-    # fill missing values in calculatedbathnbr with bathroomcnt
-    df["calculatedbathnbr"].fillna(df["bathroomcnt"], inplace=True)
-    # fill missing values in fullbathcnt from bathroomcnt as int
-    df["fullbathcnt"].fillna(df["bathroomcnt"].astype(int), inplace=True)
     # drop the remaining null values
     df.dropna(inplace=True)
+    return df
+
+
+def wrangle_zillow(use_cache=True):
+    """wrangle zillow data"""
+    filename = "prepped_zillow.csv"
+    if os.path.isfile(filename) and use_cache:
+        print("Reading prepped data from csv...")
+        return pd.read_csv(filename)
+    df = get_zillow_data()
+    # drop collumns that are redundant
+    columns_to_drop = [
+        "id",
+        "calculatedbathnbr",
+        "calculatedbathnbr",
+        "finishedsquarefeet12",
+        "fullbathcnt",
+    ]
+    df.drop(columns_to_drop, axis=1, inplace=True)
+    df = clear_parcel_id_duplicates(df)
+    df = get_single_units(df)
+    df = handle_missing_values(df)
+    df = drop_replace_nulls(df)
+    print("Saving to csv in local directory...")
+    df.to_csv(filename, index=False)
     return df

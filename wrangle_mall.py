@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
 from env import get_db_url
@@ -70,6 +70,9 @@ def split_data(df):
 
 def scale_numerical(train, validate, test, scaler=StandardScaler()):
     """scale numerical variables after fitting on training set"""
+    train = train.copy()
+    validate = validate.copy()
+    test = test.copy()
     # choose numerical columns
     numerical_cols = train.select_dtypes(include=["int64", "float64"]).columns
     # fit and transform training data
